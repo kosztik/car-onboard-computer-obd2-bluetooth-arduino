@@ -16,5 +16,9 @@ I2C device found at address 0x55  !<br />
 I2C device found at address 0x56  !<br />
 I2C device found at address 0x57  !<br />
 done<br />
+      <p>https://stackoverflow.com/questions/47823243/can-read-write-eeprom-address-however-can-only-read-write-first-memory-page/47829869#47829869</p>
+      <p>
+      https://arduino.stackexchange.com/questions/34244/storing-data-on-at24c02-eeprom-chips-with-arduino
+      </p>
     </li></ul>
     </p>
