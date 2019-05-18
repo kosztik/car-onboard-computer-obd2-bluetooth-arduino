@@ -1,0 +1,13 @@
+
+
+főmenü                   1 - 
+Benzin feltöltés         2 -
+
+
+
+
+mit mutat?
+* fogyasztást L/100Km
+* Benzin mennyiség csökkenése ( jelenlegi/ max)
+* előrejelzés hány km mehetek még
+
