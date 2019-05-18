@@ -3,11 +3,26 @@
 főmenü                   1 - 
 Benzin feltöltés         2 -
 
-
-
-
 mit mutat?
+1 -
 * fogyasztást L/100Km
 * Benzin mennyiség csökkenése ( jelenlegi/ max)
-* előrejelzés hány km mehetek még
+* előrejelzés hány km mehetek még (fogyaztással kalkulálva meddig elég még a benzin)
+
+2- megadható mennyit tankoltam
+* +5L, +2L vagy csökkentése
+
+
+
+https://en.wikipedia.org/wiki/OBD-II_PIDs
+Adatok és szenzoraik, amik kellenek:
+* maf
+* vss
+* rtses (run time since engine started)
+* vs (vehicle speed) -> átlagolni
+
+Üzemanyag tartály szintje %-ban (https://mechanics.stackexchange.com/questions/50231/obd-ii-fuel-type-and-level-of-monofuel-cars)
+* 2F 47 1 Fuel Tank Level Input
+
+
 
