@@ -6,7 +6,8 @@ Benzin feltöltés         2 -
 mit mutat?
 1 -
 * fogyasztást L/100Km
-* Benzin mennyiség csökkenése ( jelenlegi/ max)
+* Benzin mennyiség csökkenése ( jelenlegi/ max) (Kalkulált)
+* Benzin mennyiség ftl - ha működik
 * előrejelzés hány km mehetek még (fogyaztással kalkulálva meddig elég még a benzin)
 
 2- megadható mennyit tankoltam
