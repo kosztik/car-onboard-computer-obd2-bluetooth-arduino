@@ -5,7 +5,7 @@
 
 /*
  * AT24C02 stored values:
- *  0x50,0 : fuel
+ *  0x50,1 : fuel
  * 
  * 
  * 
