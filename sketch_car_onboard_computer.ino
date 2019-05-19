@@ -4,7 +4,7 @@
 #include <Wire.h>
 
 /*
- * AT24C02 stored values:
+ * AT24C02 (0x50-0x57) stored values:
  *  0x50,1 : fuel
  * 
  * 
