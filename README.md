@@ -18,7 +18,7 @@
   <li>
     <p><a href="https://i.ibb.co/9yT680Q/s-l1600.jpg" target="_blank"><img src="https://i.ibb.co/9yT680Q/s-l1600.jpg" width="150"></a><a href="https://www.ebay.com/itm/30ft-Wireless-Bluetooth-RF-Transceiver-Module-serial-RS232-TTL-HC-05-for-arduino/310540196588?ssPageName=STRK%3AMEBIDX%3AIT&_trksid=p2057872.m2749.l2649">HC-05 Bluetooth module</a> </p>
     <p>Enter command mode: high on KEY pinout. Very important to set communication speed to 38400bps because command mode talk in this speed. Arduino and serial monitor still on 9600bps</p>
-<p><img src="https://i.ibb.co/74qpCJR/Bluetooth-HC-05-with-Arduino-bb.png"></p>
+<p><img src="https://i.ibb.co/74qpCJR/Bluetooth-HC-05-with-Arduino-bb.png"><br /><a href="https://www.instructables.com/id/Setting-Up-Bluetooth-HC-05-With-Arduino/">https://www.instructables.com/id/Setting-Up-Bluetooth-HC-05-With-Arduino/</a></p>
   </li>
 </ul>
     </p>
