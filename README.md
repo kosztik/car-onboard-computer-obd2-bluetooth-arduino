@@ -15,5 +15,10 @@
   
   
   https://forum.arduino.cc/index.php?topic=436540.0</li>
+  <li>
+    <p>HC-05 Bluetooth module</p>
+    <p>Enter command mode: high on STATE pinout. Very important to set communication baud with it 38400bps because command mode talk in this speed. The serial connect and serial monitor still on 9600bps</p>
+
+  </li>
 </ul>
     </p>
