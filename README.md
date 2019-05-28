@@ -20,5 +20,10 @@
     <p>Enter command mode: high on KEY pinout. Very important to set communication speed to 38400bps because command mode talk in this speed. Arduino and serial monitor still on 9600bps</p>
 <p><img src="https://i.ibb.co/74qpCJR/Bluetooth-HC-05-with-Arduino-bb.png"><br /><a href="https://www.instructables.com/id/Setting-Up-Bluetooth-HC-05-With-Arduino/">https://www.instructables.com/id/Setting-Up-Bluetooth-HC-05-With-Arduino/</a></p>
   </li>
+  <li>
+    <p>I2C serial interface 1602 16x2 Character LCD</p>
+    <p>Address: 0x27</p>
+    <p>used library: LiquidCrystal I2C by Frank de Brabander version 1.1.2</p>
+  </li>
 </ul>
     </p>
