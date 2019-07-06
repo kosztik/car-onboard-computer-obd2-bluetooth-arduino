@@ -21,7 +21,7 @@
 <p><img src="https://i.ibb.co/74qpCJR/Bluetooth-HC-05-with-Arduino-bb.png"><br /><a href="https://www.instructables.com/id/Setting-Up-Bluetooth-HC-05-With-Arduino/">https://www.instructables.com/id/Setting-Up-Bluetooth-HC-05-With-Arduino/</a></p>
   <p>
   For some reason this bluetooth module can't worked well for me. The pair was success, but the link always failed. So I switched this version of bluetooth HC-05 module:<br />
-    <img src="https://ibb.co/TrWVT2F"><br />
+    <img src="https://i.ibb.co/V3w7N9P/1258-20-1-300x300.jpg"><br />
     It has a small button to enter AT mode. In AT mode it needs just a next few command:
 AT+INIT<br />
 AT+PAIR=12,34,56789c72,20 (,20 means 20 second timeout)<br />
