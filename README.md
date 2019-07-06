@@ -27,6 +27,7 @@ AT+INIT<br />
 AT+PAIR=12,34,56789c72,20 (,20 means 20 second timeout)<br />
 AT+BIND=12,34,56789c72<br />
 AT+LINK=12,34,56789c72<br />
+    note: capital letters must be use!!!<br />
     After switched back from AT mode, and typed ATI command, the ELM was answer me, so it succeeded first!
     
     
