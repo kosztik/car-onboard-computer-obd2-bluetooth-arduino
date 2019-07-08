@@ -2,6 +2,11 @@
 //Version 0.1
 
 #include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <SoftwareSerial.h>
+
+LiquidCrystal_I2C lcd(0x27,16,2); // set the LCD address to 0x27 for a 16 chars and 2 line display
+SoftwareSerial mySerial(10, 11); // RX, TX
 
 /*
  * AT24C02 (0x50-0x57) stored values:
@@ -25,17 +30,51 @@ int key=-1;
 int oldkey=-1;
 byte menu = 1;
 int fuel = 0;
+double maf;
+byte spd;
+int t;
+
+int test=0;
 
 void setup()
 {
   
-  Serial.begin(9600); // 9600 bps
+  //pinMode(9,OUTPUT); digitalWrite(9,HIGH);
+  //Serial.begin(9600); // 9600 bps
   Wire.begin();
   Wire.setClock(400000);
-  
+  mySerial.begin(9600);
+  Serial.begin(9600);
   fuel = (byte)i2c_eeprom_read_byte(0x50, 1);
   //i2c_eeprom_write_byte(0x50, 0,0); // null my fuel register just once, when I start using AT24C02
+
+  lcd.init(); //initialize the lcd
+  lcd.backlight(); //open the backlight
+
+  lcd.setCursor(1,0);
+  lcd.print("Connecting ...");
   
+  //Serial.println("Enter AT commands:");
+  
+  delay(10000);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("No Data");
+  lcd.setCursor(0,0);
+  lcd.print(ReadDataString("ATZ"));
+  
+  delay(2000);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print(ReadDataString("ATI"));
+  delay(2000);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Init... ERROR!");
+  lcd.setCursor(0,0);
+  lcd.print(ReadDataString("0100"));
+  delay(2000);
+  lcd.clear();
 }
 
 void loop()
@@ -99,16 +138,30 @@ void loop()
         }
       }
     }
+
+    /*
+     * 
+     * Kiolvasok minden adatot amire szükségem lehet.
+     */
+
+    lcd.setCursor(0,0);
+    lcd.print(String(VSS(ReadDataString("010D"))  )+"Km/h|" +String(VSS(ReadDataString("010D"))* 1/MAF(ReadDataString("0110"))) + "l/100  ");  
+    
+    
     /*
      * Ide jön az 1-es menü kódja. Figyeli a odb2 szenzorokat és kalkulál.
      * Akkor is, ha a 2-es menüben vagyok, vagyis nem kell 1 és 2 menü
      * esetében if -es szerkezet. 
      * 
      */
-
+     if (menu == 1) {
+        // lcd.print(inData);
+        // lcd.setCursor(1,0);
+        
+     }
     
   }
- delay(100);
+ // delay(100);
 }
 
 uint8_t i2c_eeprom_read_byte(uint8_t deviceaddress, uint8_t eeaddress) {
@@ -141,7 +194,52 @@ void manageFuel(int f) {
   fuel += f;
   if (fuel < 0) fuel = 0;
   i2c_eeprom_write_byte(0x50, 1,(byte)fuel);
-  Serial.println(fuel);
+  //Serial.println(fuel);
   
     
+}
+
+int VSS (String str) {
+  long A;
+  String work;  
+  work = str.substring(11,13);
+  A = strtol(work.c_str(), NULL, 16);
+  return A;
+}
+
+// 0110]41 10 01 58 >
+int MAF(String str) {
+  long A;
+  int B;
+  String work;
+  
+  work = str.substring(11,13);
+  A = strtol(work.c_str(), NULL, 16);
+  work = str.substring(14,16);
+  B = strtol(work.c_str(), NULL, 16);
+  
+  return (((256*A+B) / 100) * 0.3355);
+}
+
+
+String ReadDataString(String cmd)
+{
+  // BuildINString="";
+  byte inData;
+  char inChar;
+  mySerial.println(cmd);
+  delay(1000);
+  String BuildINString="";  
+  
+  while(mySerial.available() > 0)
+  {
+    inData=0;
+    inChar=0;
+    inData = mySerial.read();
+    inChar=char(inData);
+    BuildINString = BuildINString + inChar;
+  }
+  
+  //Serial.println(BuildINString);
+  return BuildINString;
 }
