@@ -32,6 +32,9 @@ byte menu = 1;
 int fuel = 0, maf;
 double fuel_consuption_1l_100km;
 int vss;
+double consup[250];
+double sum_consup = 0, av_consup = 0;
+int i,j;
 
 void setup()
 {
@@ -72,6 +75,12 @@ void setup()
   lcd.print(ReadDataString("0100"));
   delay(2000);
   lcd.clear();
+
+  for (i=0; i<250; i++) {
+    consup[i]=0;
+  }
+
+  i=0; j=0;
 }
 
 void loop()
@@ -143,12 +152,26 @@ void loop()
     vss = VSS(ReadDataString("010D"));
     MAF(ReadDataString("0110"));
     //vss=0; maf=1;
-    fuel_consuption_1l_100km =  (vss * 9069.90) /
-    ( maf *3600);
+    fuel_consuption_1l_100km =   ((maf*0.3355)/vss)*100;
     
     if (isnan(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
     if (isinf(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
     if (fuel_consuption_1l_100km <0) fuel_consuption_1l_100km=0;
+    if (i==250) i=0;
+    
+    consup[i] = fuel_consuption_1l_100km;
+    i++;
+    for (j=0;j<250;j++) {
+      sum_consup = sum_consup + consup[j];
+    }
+    //Serial.println(sum_consup);
+    if ( consup[249] == 0 ) {
+      av_consup = sum_consup/i;
+    } else {
+      av_consup = sum_consup/250;  
+    }
+    
+    
     
     //Serial.println(maf);
     lcd.setCursor(0,0);
@@ -157,8 +180,12 @@ void loop()
     lcd.print( String(fuel_consuption_1l_100km)+"  "  );  
     lcd.setCursor(0,1);
     lcd.print("Km/h");
-    lcd.setCursor(6,1);
+    lcd.setCursor(5,1);
     lcd.print("L/100Km");
+    lcd.setCursor(13,1);
+    lcd.print(String(i)+"  ");
+    lcd.setCursor(11,0);
+    lcd.print(String(av_consup)+"   ");
     
     /*
      * Ide jön az 1-es menü kódja. Figyeli a odb2 szenzorokat és kalkulál.
@@ -242,7 +269,7 @@ String ReadDataString(String cmd)
   byte inData;
   char inChar;
   mySerial.println(cmd);
-  delay(1000);
+  delay(700);
   String BuildINString="";  
   
   while(mySerial.available() > 0)
