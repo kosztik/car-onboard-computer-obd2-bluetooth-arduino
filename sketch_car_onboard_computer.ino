@@ -29,12 +29,9 @@ int adc_key_in;
 int key=-1;
 int oldkey=-1;
 byte menu = 1;
-int fuel = 0;
-double maf;
-byte spd;
-int t;
-
-int test=0;
+int fuel = 0, maf;
+double fuel_consuption_1l_100km;
+int vss;
 
 void setup()
 {
@@ -143,10 +140,25 @@ void loop()
      * 
      * Kiolvasok minden adatot amire szükségem lehet.
      */
-
-    lcd.setCursor(0,0);
-    lcd.print(String(VSS(ReadDataString("010D"))  )+"Km/h|" +String(VSS(ReadDataString("010D"))* 1/MAF(ReadDataString("0110"))) + "l/100  ");  
+    vss = VSS(ReadDataString("010D"));
+    MAF(ReadDataString("0110"));
+    //vss=0; maf=1;
+    fuel_consuption_1l_100km =  (vss * 9069.90) /
+    ( maf *3600);
     
+    if (isnan(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
+    if (isinf(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
+    if (fuel_consuption_1l_100km <0) fuel_consuption_1l_100km=0;
+    
+    //Serial.println(maf);
+    lcd.setCursor(0,0);
+    lcd.print(String(vss)+"  ");
+    lcd.setCursor(4,0);
+    lcd.print( String(fuel_consuption_1l_100km)+"  "  );  
+    lcd.setCursor(0,1);
+    lcd.print("Km/h");
+    lcd.setCursor(6,1);
+    lcd.print("L/100Km");
     
     /*
      * Ide jön az 1-es menü kódja. Figyeli a odb2 szenzorokat és kalkulál.
@@ -208,17 +220,19 @@ int VSS (String str) {
 }
 
 // 0110]41 10 01 58 >
-int MAF(String str) {
+void MAF(String str) {
   long A;
   int B;
-  String work;
-  
+  String work="";
   work = str.substring(11,13);
+  //work="01";
   A = strtol(work.c_str(), NULL, 16);
   work = str.substring(14,16);
+  //work="DC";
   B = strtol(work.c_str(), NULL, 16);
-  
-  return (((256*A+B) / 100) * 0.3355);
+  //Serial.println(B);
+  maf = ((256*A+B) / 100);
+  //Serial.println(maf);
 }
 
 
