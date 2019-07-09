@@ -35,6 +35,7 @@ int vss;
 double consup[250];
 double sum_consup = 0, av_consup = 0;
 int i,j;
+byte pkey, maxkey;
 
 void setup()
 {
@@ -54,26 +55,20 @@ void setup()
   lcd.setCursor(1,0);
   lcd.print("Connecting ...");
   
-  //Serial.println("Enter AT commands:");
-  
   delay(10000);
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("No Data");
-  lcd.setCursor(0,0);
   lcd.print(ReadDataString("ATZ"));
   
-  delay(2000);
+  delay(1000);
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print(ReadDataString("ATI"));
-  delay(2000);
+  delay(1000);
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("Init... ERROR!");
-  lcd.setCursor(0,0);
   lcd.print(ReadDataString("0100"));
-  delay(2000);
+  delay(1000);
   lcd.clear();
 
   for (i=0; i<250; i++) {
@@ -81,6 +76,8 @@ void setup()
   }
 
   i=0; j=0;
+  maxkey= analogRead(0);
+  menu = 1;
 }
 
 void loop()
@@ -89,7 +86,7 @@ void loop()
   key = adc_key_in;  // convert into key press
   if (key != oldkey)   // if keypress is detected
    {
-    delay(50);  // wait for debounce time
+    //delay(50);  // wait for debounce time
     adc_key_in = analogRead(0);    // read the value from the sensor
     key = adc_key_in;   
     
@@ -97,11 +94,19 @@ void loop()
     {
       oldkey = key;
       if (key >=0){
-        //Serial.println(key); // debug to show keycodes - it help to adjust your own AD keyboard button values
-        switch(key)
+        
+        pkey = ((key*100)/maxkey);
+        Serial.println(key); // debug to show keycodes - it help to adjust your own AD keyboard button values
+        
+        
+        switch(pkey)
         {
           //   ˇˇˇ - you will need to change these values for your own AD keyboard
-           case 0: // sw1
+           case 7: // sw1
+           case 8: // sw1
+           case 9: // sw1
+           case 10: // sw1
+           case 11: // sw1
                   Serial.println("sw 1");                                   
                   // i2c_eeprom_read_byte(0x50, 1));
 
@@ -109,8 +114,12 @@ void loop()
                   if (menu == 2) manageFuel(-1);
                   break;
                   
-           case 20:
-           case 19: // sw2
+           case 24:
+           case 25:
+           case 26:
+           case 27:
+           case 28:
+           case 29: // sw2
                    Serial.println("sw 2");
                    // i2c_eeprom_write_byte(0x50, 1,19);
 
@@ -118,23 +127,44 @@ void loop()
                    if (menu == 2) manageFuel(+5);
                    break;
                                       
-           case 57: // sw3
+           case 54: // sw3
+           case 55:
+           case 56:
+           case 57:
+           case 58:
+           case 59:
+           case 60:
                   Serial.println("sw 3");
 
                   // ha a 2-es menü alatt nyomjuk meg, a benzin -5L
                   if (menu == 2) manageFuel(-5);
                   break;
 
-           case 110:
-           case 109: //sw4
+           case 95:
+           case 96:
+           case 97:
+           case 98:
+           case 99:
+           case 100:
+           case 101: //sw4
                   Serial.println("sw 4");
                   
                   // ha a 2-es menü alatt nyomjuk meg, a benzin +1L
                   if (menu == 2) manageFuel(+1);
                   
                   break;
-           case 232:
-           case 233: // sw5 
+           case 190:
+           case 191:
+           case 192:
+           case 193:
+           case 194:
+           case 195:
+           case 196:
+           case 197:
+           case 198: 
+           case 199:
+           case 200:
+           // sw5 
                   // Serial.println("sw 5");
                   if (menu == 2 ) {menu = 1;}
                   else {menu = 2;}
@@ -173,19 +203,6 @@ void loop()
     
     
     
-    //Serial.println(maf);
-    lcd.setCursor(0,0);
-    lcd.print(String(vss)+"  ");
-    lcd.setCursor(4,0);
-    lcd.print( String(fuel_consuption_1l_100km)+"  "  );  
-    lcd.setCursor(0,1);
-    lcd.print("Km/h");
-    lcd.setCursor(5,1);
-    lcd.print("L/100Km");
-    lcd.setCursor(13,1);
-    lcd.print(String(i)+"  ");
-    lcd.setCursor(11,0);
-    lcd.print(String(av_consup)+"   ");
     
     /*
      * Ide jön az 1-es menü kódja. Figyeli a odb2 szenzorokat és kalkulál.
@@ -194,9 +211,27 @@ void loop()
      * 
      */
      if (menu == 1) {
+        lcd.clear();
         // lcd.print(inData);
         // lcd.setCursor(1,0);
-        
+        //Serial.println(maf);
+        lcd.setCursor(0,0);
+        lcd.print(String(vss)+"  ");
+        lcd.setCursor(4,0);
+        lcd.print( String(fuel_consuption_1l_100km)+"  "  );  
+        lcd.setCursor(0,1);
+        lcd.print("Km/h");
+        lcd.setCursor(5,1);
+        lcd.print("L/100Km");
+        lcd.setCursor(13,1);
+        lcd.print(String(i)+"  ");
+        lcd.setCursor(11,0);
+        lcd.print(String(av_consup)+"   ");
+            
+     }
+
+     if (menu == 2) {
+        lcd.clear();
      }
     
   }
