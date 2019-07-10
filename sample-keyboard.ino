@@ -35,7 +35,7 @@ void loop()
            case 4:Serial.println("S5 OK");
                   break;
         }
-      }
+      } 
     }
   }
  delay(100);
