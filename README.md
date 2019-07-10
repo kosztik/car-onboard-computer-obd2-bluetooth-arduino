@@ -23,6 +23,7 @@
   For some reason this bluetooth module can't worked well for me. The pair was success, but the link always failed. So I switched this version of bluetooth HC-05 module:<br />
     <img src="https://i.ibb.co/V3w7N9P/1258-20-1-300x300.jpg"><br />
     It has a small button to enter AT mode. In AT mode it needs just a next few command:<br />
+    AT+PSWD=1234  # set up the right password
 AT+INIT<br />
 AT+PAIR=12,34,56789c72,20 (,20 means 20 second timeout)<br />
 AT+BIND=12,34,56789c72<br />
