@@ -4,6 +4,9 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <SoftwareSerial.h>
+#include <extEEPROM.h> 
+#include <math.h>
+#include <Streaming.h> 
 
 LiquidCrystal_I2C lcd(0x27,16,2); // set the LCD address to 0x27 for a 16 chars and 2 line display
 SoftwareSerial mySerial(10, 11); // RX, TX
@@ -35,7 +38,9 @@ int vss;
 double consup[250];
 double sum_consup = 0, av_consup = 0;
 int i,j;
-byte pkey, maxkey;
+byte pkey, maxkey, fuel_in_tank;
+
+
 
 void setup()
 {
@@ -46,29 +51,31 @@ void setup()
   Wire.setClock(400000);
   mySerial.begin(9600);
   Serial.begin(9600);
-  fuel = (byte)i2c_eeprom_read_byte(0x50, 1);
+
+  
+  fuel = (byte)i2c_eeprom_read_byte(0x50, 1); // 0x50-0x57, 0-7
   //i2c_eeprom_write_byte(0x50, 0,0); // null my fuel register just once, when I start using AT24C02
 
   lcd.init(); //initialize the lcd
   lcd.backlight(); //open the backlight
 
-  lcd.setCursor(1,0);
+  lcd.setCursor(0,0);
   lcd.print("Connecting ...");
   
   delay(10000);
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("Init...");
-  lcd.setCursor(1,0);
+  lcd.setCursor(0,1);
   lcd.print(ReadDataString("ATZ"));
   
   delay(1000);
   
-  lcd.setCursor(1,0);
+  lcd.setCursor(0,1);
   lcd.print(ReadDataString("ATI"));
   delay(1000);
   
-  lcd.setCursor(1,0);
+  lcd.setCursor(0,1);
   lcd.print(ReadDataString("0100"));
   delay(1000);
   
@@ -77,9 +84,15 @@ void setup()
     consup[i]=0;
   }
 
-  i=0; j=0;
+  i=0; j=0;  
   maxkey= analogRead(0);
   menu = 1;
+  lcd.clear();
+  
+  lcd.setCursor(0,1);
+  lcd.print("Km/h");
+  lcd.setCursor(5,1);
+  lcd.print("L/100Km");
 }
 
 void loop()
@@ -189,7 +202,9 @@ void loop()
     if (isnan(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
     if (isinf(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
     if (fuel_consuption_1l_100km <0) fuel_consuption_1l_100km=0;
-    if (i==250) i=0;
+    if ( i==250 ) i=0;
+    if ( i==0 ) tank("012F");
+      
     
     consup[i] = fuel_consuption_1l_100km;
     i++;
@@ -214,7 +229,7 @@ void loop()
      * 
      */
      // if (menu == 1) {
-        lcd.clear();
+        
         // lcd.print(inData);
         // lcd.setCursor(1,0);
         //Serial.println(maf);
@@ -222,12 +237,9 @@ void loop()
         lcd.print(String(vss)+"  ");
         lcd.setCursor(4,0);
         lcd.print( String(fuel_consuption_1l_100km)+"  "  );  
-        lcd.setCursor(0,1);
-        lcd.print("Km/h");
-        lcd.setCursor(5,1);
-        lcd.print("L/100Km");
+
         lcd.setCursor(13,1);
-        lcd.print(String(i)+"  ");
+        lcd.print(String(fuel_in_tank)+"%  ");
         lcd.setCursor(11,0);
         lcd.print(String(av_consup)+"   ");
             
@@ -300,6 +312,22 @@ void MAF(String str) {
   //Serial.println(maf);
 }
 
+void tank(String str) {
+  long A;
+  int B;
+ 
+  String work="";
+  work = str.substring(11,13);
+  //work="01";
+  A = strtol(work.c_str(), NULL, 16);
+  work = str.substring(14,16);
+  //work="DC";
+  B = strtol(work.c_str(), NULL, 16);
+  //Serial.println(B);
+  fuel_in_tank =  B ; //((100/255) * B);
+  //Serial.println(maf);
+}
+
 
 String ReadDataString(String cmd)
 {
@@ -322,3 +350,42 @@ String ReadDataString(String cmd)
   //Serial.println(BuildINString);
   return BuildINString;
 }
+
+
+// encode and decode 3 digits float on 2 byte
+
+int Encode(double value) {
+  int cnt = 0;
+  while (value != floor(value)) {
+    value *= 10.0;
+    cnt++;
+  }
+  return (short)((cnt << 12) + (int)value);
+}
+
+double Decode(short value) {
+  int cnt = value >> 12;
+  double result = value & 0xfff;
+  while (cnt > 0) {
+    result /= 10.0;
+    cnt--;
+  }
+  return result;
+}
+
+/*
+ * 
+ *
+      
+      For converting two bytes the cleanest solution is
+      
+      data[0] = (byte) width;
+      data[1] = (byte) (width >>> 8);
+      For converting an integer to four bytes the code would be
+      
+      data[0] = (byte) width;
+      data[1] = (byte) (width >>> 8);
+      data[2] = (byte) (width >>> 16);
+      data[3] = (byte) (width >>> 24);
+ * 
+ */
