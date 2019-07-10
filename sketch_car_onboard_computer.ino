@@ -58,18 +58,20 @@ void setup()
   delay(10000);
   lcd.clear();
   lcd.setCursor(0,0);
+  lcd.print("Init...");
+  lcd.setCursor(1,0);
   lcd.print(ReadDataString("ATZ"));
   
   delay(1000);
-  lcd.clear();
-  lcd.setCursor(0,0);
+  
+  lcd.setCursor(1,0);
   lcd.print(ReadDataString("ATI"));
   delay(1000);
-  lcd.clear();
-  lcd.setCursor(0,0);
+  
+  lcd.setCursor(1,0);
   lcd.print(ReadDataString("0100"));
   delay(1000);
-  lcd.clear();
+  
 
   for (i=0; i<250; i++) {
     consup[i]=0;
@@ -95,8 +97,8 @@ void loop()
       oldkey = key;
       if (key >=0){
         
-        pkey = ((key*100)/maxkey);
-        Serial.println(key); // debug to show keycodes - it help to adjust your own AD keyboard button values
+        //pkey = ((key*100)/maxkey);
+        //Serial.println(key); // debug to show keycodes - it help to adjust your own AD keyboard button values
         
         
         switch(pkey)
@@ -191,6 +193,7 @@ void loop()
     
     consup[i] = fuel_consuption_1l_100km;
     i++;
+    sum_consup=0;
     for (j=0;j<250;j++) {
       sum_consup = sum_consup + consup[j];
     }
@@ -210,7 +213,7 @@ void loop()
      * esetében if -es szerkezet. 
      * 
      */
-     if (menu == 1) {
+     // if (menu == 1) {
         lcd.clear();
         // lcd.print(inData);
         // lcd.setCursor(1,0);
@@ -228,12 +231,12 @@ void loop()
         lcd.setCursor(11,0);
         lcd.print(String(av_consup)+"   ");
             
-     }
-
+     //}
+    /*
      if (menu == 2) {
         lcd.clear();
      }
-    
+    */
   }
  // delay(100);
 }
