@@ -4,9 +4,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <SoftwareSerial.h>
-#include <extEEPROM.h> 
-#include <math.h>
-#include <Streaming.h> 
+
 
 LiquidCrystal_I2C lcd(0x27,16,2); // set the LCD address to 0x27 for a 16 chars and 2 line display
 SoftwareSerial mySerial(10, 11); // RX, TX
@@ -33,7 +31,7 @@ int key=-1;
 int oldkey=-1;
 byte menu = 1;
 int fuel = 0, maf;
-double fuel_consuption_1l_100km;
+double fuel_consuption_1l_100km,stored_av;
 int vss;
 double consup[250];
 double sum_consup = 0, av_consup = 0;
@@ -196,14 +194,21 @@ void loop()
      */
     vss = VSS(ReadDataString("010D"));
     MAF(ReadDataString("0110"));
+    if (vss == 0) vss=1;
     //vss=0; maf=1;
     fuel_consuption_1l_100km =   ((maf*0.3355)/vss)*100;
     
     if (isnan(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
     if (isinf(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
     if (fuel_consuption_1l_100km <0) fuel_consuption_1l_100km=0;
-    if ( i==250 ) i=0;
-    if ( i==0 ) tank("012F");
+    if ( i==250 ) {
+      i=0;
+      storeAverage(av_consup);
+    }
+    if ( i==0 ) {
+      loadAverage();
+      tank("012F");
+    }
       
     
     consup[i] = fuel_consuption_1l_100km;
@@ -234,15 +239,21 @@ void loop()
         // lcd.setCursor(1,0);
         //Serial.println(maf);
         lcd.setCursor(0,0);
-        lcd.print(String(vss)+"  ");
+        if (vss==1) {
+          lcd.print("[0] ");
+        } else {
+          lcd.print(String(vss)+"  ");  
+        }
+        
         lcd.setCursor(4,0);
-        lcd.print( String(fuel_consuption_1l_100km)+"  "  );  
+        //lcd.print( String(fuel_consuption_1l_100km)+"  "  );
+        lcd.print( String(av_consup)+"  "  );  
 
         lcd.setCursor(13,1);
         lcd.print(String(fuel_in_tank)+"%  ");
         lcd.setCursor(11,0);
-        lcd.print(String(av_consup)+"   ");
-            
+        //lcd.print(String(av_consup)+"   ");
+          lcd.print(String(stored_av)+"   ");  
      //}
     /*
      if (menu == 2) {
@@ -389,3 +400,23 @@ double Decode(short value) {
       data[3] = (byte) (width >>> 24);
  * 
  */
+
+ void storeAverage(double av) {
+  // at the moment it only store one average
+  int av_int = Encode(av);
+  byte av1, av2;
+  av1 = (byte) (av_int & 0xFF);
+  av2 = (byte) ((av_int >> 8) & 0xFF);
+  i2c_eeprom_write_byte(0x51, 0,av1);
+  i2c_eeprom_write_byte(0x51, 1,av2);
+ }
+
+ void loadAverage() {
+  byte av1,av2;
+  
+  av1 = (byte)i2c_eeprom_read_byte(0x51, 0);
+  av2 = (byte)i2c_eeprom_read_byte(0x51, 1);
+  int av = ((av1 & 0xFF) << 8) | (av2 & 0xFF);
+  stored_av = Decode(av);
+  
+ }
