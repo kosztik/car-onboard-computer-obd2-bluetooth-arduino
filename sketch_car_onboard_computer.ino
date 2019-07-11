@@ -196,7 +196,7 @@ void loop()
      */
     vss = VSS(ReadDataString("010D"));
     MAF(ReadDataString("0110"));
-    if (vss == 0) vss=1;
+    
     //vss=0; maf=1;
     fuel_consuption_1l_100km =   ((maf*0.3355)/vss)*100;
     
@@ -209,7 +209,7 @@ void loop()
     }
     if ( i==0 ) {
       loadAverage();
-      tank("012F");
+      tank(ReadDataString("012F"));
       lfuel_in_tank = (tanksize * fuel_in_tank)/100;
       kmcantravel = (lfuel_in_tank * 100) / av_consup;
       //  av_consupL  100km
@@ -245,11 +245,8 @@ void loop()
         // lcd.setCursor(1,0);
         //Serial.println(maf);
         lcd.setCursor(0,0);
-        if (vss==1) {
-          lcd.print("[0] ");
-        } else {
-          lcd.print(String(vss)+"  ");  
-        }
+        lcd.print(String(vss)+"  ");  
+        
         
         lcd.setCursor(4,0);
         //lcd.print( String(fuel_consuption_1l_100km)+"  "  );
@@ -334,21 +331,15 @@ void MAF(String str) {
   //Serial.println(maf);
 }
 
-void tank(String str) {
+
+
+void tank (String str) {
   long A;
-  int B;
- 
-  String work="";
-  work = str.substring(11,13);
-  //work="01";
+  String work;  
+  work = str.substring(10,13);
   A = strtol(work.c_str(), NULL, 16);
-  work = str.substring(14,16);
-  //work="DC";
-  B = strtol(work.c_str(), NULL, 16);
-  //Serial.println(B);
-  fuel_in_tank =  B ; //((100/255) * B);
-  //Serial.println(maf);
-  
+  //Serial.println(A);
+  fuel_in_tank = A;
 }
 
 
