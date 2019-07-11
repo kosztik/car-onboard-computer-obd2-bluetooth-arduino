@@ -5,6 +5,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <SoftwareSerial.h>
 
+#define tanksize 42
 
 LiquidCrystal_I2C lcd(0x27,16,2); // set the LCD address to 0x27 for a 16 chars and 2 line display
 SoftwareSerial mySerial(10, 11); // RX, TX
@@ -30,13 +31,14 @@ int adc_key_in;
 int key=-1;
 int oldkey=-1;
 byte menu = 1;
-int fuel = 0, maf;
+int fuel = 0, maf, kmcantravel;
 double fuel_consuption_1l_100km,stored_av;
 int vss;
 double consup[250];
 double sum_consup = 0, av_consup = 0;
 int i,j;
-byte pkey, maxkey, fuel_in_tank;
+byte pkey, maxkey, fuel_in_tank, lfuel_in_tank;
+boolean debug = true;
 
 
 
@@ -90,7 +92,7 @@ void setup()
   lcd.setCursor(0,1);
   lcd.print("Km/h");
   lcd.setCursor(5,1);
-  lcd.print("L/100Km");
+  //lcd.print("L/100Km");
 }
 
 void loop()
@@ -208,6 +210,10 @@ void loop()
     if ( i==0 ) {
       loadAverage();
       tank("012F");
+      lfuel_in_tank = (tanksize * fuel_in_tank)/100;
+      kmcantravel = (lfuel_in_tank * 100) / av_consup;
+      //  av_consupL  100km
+      //   lfuel       ?             
     }
       
     
@@ -250,10 +256,15 @@ void loop()
         lcd.print( String(av_consup)+"  "  );  
 
         lcd.setCursor(13,1);
-        lcd.print(String(fuel_in_tank)+"%  ");
+        lcd.print(String(lfuel_in_tank)+"L  ");
         lcd.setCursor(11,0);
         //lcd.print(String(av_consup)+"   ");
-          lcd.print(String(stored_av)+"   ");  
+        lcd.print(String(stored_av)+"   ");
+        
+        //if (debug==1) {
+          lcd.setCursor(5,1);
+          lcd.print(String(kmcantravel)+"Km");
+        //}  
      //}
     /*
      if (menu == 2) {
@@ -337,6 +348,7 @@ void tank(String str) {
   //Serial.println(B);
   fuel_in_tank =  B ; //((100/255) * B);
   //Serial.println(maf);
+  
 }
 
 
