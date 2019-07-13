@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <SoftwareSerial.h>
+#include <EEPROM.h>
 
 #define tanksize 42
 
@@ -31,11 +32,11 @@ int adc_key_in;
 int key=-1;
 int oldkey=-1;
 byte menu = 1;
-int fuel = 0, maf, kmcantravel;
+int maf, kmcantravel;
 double fuel_consuption_1l_100km,stored_av, fuel_in_tank, lfuel_in_tank;
 int vss;
 double consup[250];
-double fuelc, lperh[5],  sum_lpers;
+double fuelc, fuel, lperh[5],  sum_lpers;
 
 double sum_consup = 0, av_consup = 0;
 int i,j,k,l;
@@ -94,8 +95,8 @@ void setup()
   menu = 1;
   lcd.clear();
   
-  
-  fuelc = fuel;
+  EEPROM.get(0,fuelc);
+  //fuelc = fuel;
 }
 
 void loop()
@@ -125,7 +126,7 @@ void loop()
                   manageFuel(-1);
         }
 
-        if (key >=30 && key <= 60) {
+        if (key >=36 && key <= 60) {
                   
                    // sw2
                    Serial.println("sw 2");
@@ -175,7 +176,7 @@ void loop()
     if (fuelsaved == false) {
 
       fuel = fuelc;
-      manageFuel(0);
+      EEPROM.put(0, fuelc);
       fuelsaved = true;
       
     }
@@ -318,11 +319,12 @@ void i2c_eeprom_write_byte(uint8_t deviceaddress, uint8_t eeaddress, uint8_t dat
   Wire.endTransmission();
 }
 
-void manageFuel(int f) {
+void manageFuel(double f) {
 
   fuel += f;
   if (fuel < 0) fuel = 0;
-  i2c_eeprom_write_byte(0x50, 1,(byte)fuel);
+  EEPROM.put(0,fuel);
+  // i2c_eeprom_write_byte(0x50, 1,(byte)fuel);
   //Serial.println(fuel);
   
     
