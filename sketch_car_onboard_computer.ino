@@ -234,12 +234,13 @@ void loop()
               for (l=0; l<5; l++) {
                 sum_lpers = sum_lpers + lperh[l];
               }
-              
-              sum_lpers = sum_lpers /5; // átlag
-              sum_lpers = sum_lpers / 3600; // adott másodpercben
-              fuelc = fuelc - sum_lpers; 
-              //Serial.println(fuelc,6);
 
+              if (lperh[4] > 0 ) { 
+                sum_lpers = sum_lpers /5; // átlag
+                sum_lpers = sum_lpers / 3600; // adott másodpercben
+                fuelc = fuelc - sum_lpers; 
+                //Serial.println(fuelc,6);
+              }
               
               //Serial.println(sum_consup);
               if ( consup[249] == 0 ) {
