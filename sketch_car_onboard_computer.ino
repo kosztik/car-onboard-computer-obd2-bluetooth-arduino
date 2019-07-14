@@ -35,7 +35,7 @@ byte menu = 1;
 int maf, kmcantravel;
 double fuel_consuption_1l_100km,stored_av, fuel_in_tank, lfuel_in_tank;
 int vss;
-double consup[250];
+double consup[100];
 double fuelc, fuel, lperh[5],  sum_lpers;
 
 double sum_consup = 0, av_consup = 0;
@@ -82,7 +82,7 @@ void setup()
   delay(1000);
   
 
-  for (i=0; i<250; i++) {
+  for (i=0; i<100; i++) {
     consup[i]=0;
   }
 
@@ -108,7 +108,7 @@ void loop()
     //delay(50);  // wait for debounce time
     adc_key_in = analogRead(0);    // read the value from the sensor
     key = adc_key_in;   
-    //Serial.println(adc_key_in);
+    Serial.println(adc_key_in);
     if (key != oldkey)
     {
       oldkey = key;
@@ -117,49 +117,56 @@ void loop()
         //pkey = ((key*100)/maxkey);
        // Serial.println(key); // debug to show keycodes - it help to adjust your own AD keyboard button values
         //Serial.println(String(maxkey)+"-----");
+
         
         if (key >=10 && key <= 29 ) {
                   Serial.println("sw 1");                                   
                   // i2c_eeprom_read_byte(0x50, 1));
 
                   // ha a 2-es menü alatt nyomjuk meg, a benzin -1L
+                  if (vss == 0) {
                   manageFuel(-1);
+                  }
         }
 
-        if (key >=36 && key <= 60) {
+        if (key >=31 && key <= 60) {
                   
                    // sw2
                    Serial.println("sw 2");
                    // i2c_eeprom_write_byte(0x50, 1,19);
 
-                   // ha a 2-es menü alatt nyomjuk meg, a benzin +5L
-                   manageFuel(+5);
+                   if (vss == 0) {
+                   manageFuel(+0.25);
+                   }
                    
         }                    
 
-        if (key >=70 && key <= 90 ) {
+        if (key >=65 && key <= 90 ) {
             // sw3
            
                   Serial.println("sw 3");
 
-                  // ha a 2-es menü alatt nyomjuk meg, a benzin -5L
-                  manageFuel(-5);
-                  
+                  if (vss == 0) {
+                  manageFuel(-0.25);
+                  }
         }
 
-        if (key >= 120 && key <= 140 ) {
+        if (key >= 100 && key <= 140 ) {
            //sw4
                   Serial.println("sw 4");
-                  
+                  if (vss == 0) {
                   // ha a 2-es menü alatt nyomjuk meg, a benzin +1L
                   manageFuel(+1);
+                  }
                   
         }
 
         if (key >= 230 && key <= 250) { // sw5
            // sw5 
-
-                  
+           if (vss == 0) {
+          fuel= -1 ;
+          manageFuel(0);
+           }
 
 
         
@@ -193,9 +200,9 @@ void loop()
               if (isnan(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
               if (isinf(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
               if (fuel_consuption_1l_100km <0) fuel_consuption_1l_100km=0;
-              if ( i==250 ) {
+              if ( i==100 ) {
                 i=0;
-                storeAverage(av_consup);
+                //storeAverage(av_consup);
               }
 
               if (k == 5) k=0;
@@ -205,7 +212,7 @@ void loop()
               kmcantravel = (lfuel_in_tank * 100) / av_consup;
               
               if ( i==0 ) {
-                loadAverage();
+                
                 
                 
                 //  av_consupL  100km
@@ -220,7 +227,7 @@ void loop()
               i++; k++;
               
               sum_consup=0;
-              for (j=0;j<250;j++) {
+              for (j=0;j<100;j++) {
                 sum_consup = sum_consup + consup[j];
               }
 
@@ -231,7 +238,7 @@ void loop()
               sum_lpers = sum_lpers /5; // átlag
               sum_lpers = sum_lpers / 3600; // adott másodpercben
               fuelc = fuelc - sum_lpers; 
-              Serial.println(fuelc,6);
+              //Serial.println(fuelc,6);
 
               
               //Serial.println(sum_consup);
@@ -267,8 +274,8 @@ void loop()
                   lcd.setCursor(13,1);
                   lcd.print(String(fuelc) + "L");
                   lcd.setCursor(11,0);
-                  //lcd.print(String(av_consup)+"   ");
-                  lcd.print(String(stored_av)+"   ");
+                  
+                  //lcd.print(String(stored_av)+"   ");
                   
                   //if (debug==1) {
                     lcd.setCursor(5,1);
@@ -287,7 +294,7 @@ void loop()
       lcd.setCursor(0,0);
       lcd.print("Fuel: ");
       lcd.setCursor(6,0);
-      lcd.print(String(fuel)+"  ");
+      lcd.print(String(fuel)+"L  ");
     }
     
   }
@@ -388,10 +395,10 @@ int Encode(double value) {
     value *= 10.0;
     cnt++;
   }
-  return (short)((cnt << 12) + (int)value);
+  return (int)((cnt << 12) + (int)value);
 }
 
-double Decode(short value) {
+double Decode(int value) {
   int cnt = value >> 12;
   double result = value & 0xfff;
   while (cnt > 0) {
