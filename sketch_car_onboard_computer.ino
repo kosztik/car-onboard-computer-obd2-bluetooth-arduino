@@ -35,11 +35,12 @@ byte menu = 1;
 int maf, kmcantravel;
 double fuel_consuption_1l_100km,stored_av, fuel_in_tank, lfuel_in_tank;
 int vss;
-double consup[100];
-double fuelc, fuel, lperh[5],  sum_lpers;
+double consup[25];
+double consupl[5];
+double fuel, lperh[5],  sum_lpers;
 
-double sum_consup = 0, av_consup = 0;
-int i,j,k,l;
+double sum_consup = 0, av_consup = 0, sum_consupl = 0, av_consupl = 0;
+int i,j,k,l,n,m;
 boolean debug = true, inspeed = true, fuelsaved =false;
 byte speed_r[]={10, 20, 30, 40, 60, 70, 90, 110, 130};
 
@@ -82,21 +83,20 @@ void setup()
   delay(1000);
   
 
-  for (i=0; i<100; i++) {
+  for (i=0; i<25; i++) {
     consup[i]=0;
   }
 
   for (k=0;k<5;k++) lperh[k] = 0;
+  for (n=0;n<5;n++) consupl[n] =0;
 
-  
-
-  i=0; j=0, k=0, l=0;  
+  i=0; j=0, k=0, l=0,n=0,m=0;  
   
   menu = 1;
   lcd.clear();
   
-  EEPROM.get(0,fuelc);
-  //fuelc = fuel;
+  EEPROM.get(0,fuel);
+  
 }
 
 void loop()
@@ -182,13 +182,13 @@ void loop()
 
     if (fuelsaved == false) {
 
-      fuel = fuelc;
-      EEPROM.put(0, fuelc);
+      
+      EEPROM.put(0, fuel);
       fuelsaved = true;
       
     }
     
-    //vss=60;
+    //vss=30;
     if (vss > 0) 
     {
               inspeed = true; fuelsaved = false;
@@ -200,35 +200,35 @@ void loop()
               if (isnan(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
               if (isinf(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
               if (fuel_consuption_1l_100km <0) fuel_consuption_1l_100km=0;
-              if ( i==100 ) {
+              if ( i==25 ) {
                 i=0;
                 //storeAverage(av_consup);
               }
 
               if (k == 5) k=0;
+              if (m == 5) m=0;
 
 
-              lfuel_in_tank = (tanksize * fuelc)/100;
+              lfuel_in_tank = (tanksize * fuel)/100;
               kmcantravel = (lfuel_in_tank * 100) / av_consup;
               
-              if ( i==0 ) {
                 
-                
-                
-                //  av_consupL  100km
-                //   lfuel       ?             
-              }
-                
-              
+             
               consup[i] = fuel_consuption_1l_100km;
+              consupl[m]= fuel_consuption_1l_100km;
               
               lperh[k] = maf * 0.335; // L/h
               
-              i++; k++;
+              i++; k++; m++;
               
               sum_consup=0;
-              for (j=0;j<100;j++) {
+              for (j=0;j<25;j++) {
                 sum_consup = sum_consup + consup[j];
+              }
+
+              sum_consupl=0;
+              for (n=0;n<5;n++) {
+                sum_consupl = sum_consupl + consupl[n];
               }
 
               for (l=0; l<5; l++) {
@@ -238,17 +238,24 @@ void loop()
               if (lperh[4] > 0 ) { 
                 sum_lpers = sum_lpers /5; // átlag
                 sum_lpers = sum_lpers / 3600; // adott másodpercben
-                fuelc = fuelc - sum_lpers; 
-                //Serial.println(fuelc,6);
+                fuel = fuel - sum_lpers; 
+                //Serial.println(fuel,6);
               }
               
               //Serial.println(sum_consup);
-              if ( consup[249] == 0 ) {
+              if ( consup[24] == 0 ) {
                 av_consup = sum_consup/i;
               } else {
-                av_consup = sum_consup/250;  
+                av_consup = sum_consup/25;  
               }
+
               
+              
+              if ( consupl[4] == 0 ) {
+                av_consupl = sum_consupl/m;
+              } else {
+                av_consupl = sum_consupl/5;  
+              }
               
               
               
@@ -268,21 +275,26 @@ void loop()
                   lcd.print("Km/h");
                   lcd.setCursor(5,1);
                   
-                  lcd.setCursor(4,0);
+                  lcd.setCursor(10,0);
                   //lcd.print( String(fuel_consuption_1l_100km)+"  "  );
                   lcd.print( String(av_consup)+"  "  );  
-          
-                  lcd.setCursor(13,1);
-                  lcd.print(String(fuelc) + "L");
-                  lcd.setCursor(11,0);
+
+                  lcd.setCursor(4,0);
+                  //lcd.print( String(fuel_consuption_1l_100km)+"  "  );
+                  lcd.print( String(av_consupl)+"  "  ); 
+
+                  
+                  lcd.setCursor(11,1);
+                  lcd.print(String(fuel) + "L");
+                  
                   
                   //lcd.print(String(stored_av)+"   ");
                   
-                  //if (debug==1) {
-                    lcd.setCursor(5,1);
-                    lcd.print(String(kmcantravel)+"Km");
-                  //}  
-               //}
+                  
+                  lcd.setCursor(5,1);
+                  lcd.print(String(kmcantravel)+"Km ");
+                   
+               
               
     }
 
