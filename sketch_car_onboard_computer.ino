@@ -31,19 +31,22 @@ int NUM_KEYS = 5;
 int adc_key_in;
 int key=-1;
 int oldkey=-1;
-byte menu = 1;
 int maf, kmcantravel;
 double fuel_consuption_1l_100km,stored_av, fuel_in_tank, lfuel_in_tank;
 int vss;
 double consup[25];
 double consupl[5];
-double fuel, lperh[5],  sum_lpers;
+double fuel, sum_lpers;
+struct lph {
+  double lperh[125];
+};
 
 double sum_consup = 0, av_consup = 0, sum_consupl = 0, av_consupl = 0;
 int i,j,k,l,n,m;
 boolean debug = true, inspeed = true, fuelsaved =false;
 byte speed_r[]={10, 20, 30, 40, 60, 70, 90, 110, 130};
 
+struct lph lph1;
 
 void setup()
 {
@@ -87,16 +90,17 @@ void setup()
     consup[i]=0;
   }
 
-  for (k=0;k<5;k++) lperh[k] = 0;
+  for (k=0;k<125;k++) lph1.lperh[k] = 0;
   for (n=0;n<5;n++) consupl[n] =0;
 
-  i=0; j=0, k=0, l=0,n=0,m=0;  
+  i=0; j=0, k=0, l=0, n=0, m=0;  
+   
   
-  menu = 1;
   lcd.clear();
+
   
   EEPROM.get(0,fuel);
-  
+  EEPROM.get(4,lph1);
 }
 
 void loop()
@@ -184,6 +188,7 @@ void loop()
 
       
       EEPROM.put(0, fuel);
+      EEPROM.put(4, lph1);
       fuelsaved = true;
       
     }
@@ -217,7 +222,7 @@ void loop()
               consup[i] = fuel_consuption_1l_100km;
               consupl[m]= fuel_consuption_1l_100km;
               
-              lperh[k] = maf * 0.335; // L/h
+              lph1.lperh[k] = maf * 0.335; // L/h
               
               i++; k++; m++;
               
@@ -231,15 +236,20 @@ void loop()
                 sum_consupl = sum_consupl + consupl[n];
               }
 
-              for (l=0; l<5; l++) {
-                sum_lpers = sum_lpers + lperh[l];
+              for (l=0; l<125; l++) {
+                sum_lpers = sum_lpers + lph1.lperh[l];
               }
 
-              if (lperh[4] > 0 ) { 
-                sum_lpers = sum_lpers /5; // átlag
+              if (lph1.lperh[124] == 0) {
+                sum_lpers = sum_lpers /k; // átlag
+                sum_lpers = sum_lpers / 3600; // adott másodpercben
+                fuel = fuel - sum_lpers;
+              }
+              
+              if (lph1.lperh[124] > 0 ) { 
+                sum_lpers = sum_lpers /125; // átlag
                 sum_lpers = sum_lpers / 3600; // adott másodpercben
                 fuel = fuel - sum_lpers; 
-                //Serial.println(fuel,6);
               }
               
               //Serial.println(sum_consup);
@@ -269,22 +279,24 @@ void loop()
                   // lcd.setCursor(1,0);
                   //Serial.println(maf);
                   lcd.setCursor(0,0);
-                  lcd.print(String(vss)+"  ");  
+                  lcd.print(String(vss)+" ");  
 
                   lcd.setCursor(0,1);
                   lcd.print("Km/h");
                   lcd.setCursor(5,1);
                   
-                  lcd.setCursor(10,0);
-                  //lcd.print( String(fuel_consuption_1l_100km)+"  "  );
-                  lcd.print( String(av_consup)+"  "  );  
+                  lcd.setCursor(5,0);
+                  //lcd.print( String(fuel_consuption_1l_100km)+" "  );
+                  lcd.print( String(av_consupl)+" "  );
+                  
+                  lcd.setCursor(11,0);
+                  //lcd.print( String(fuel_consuption_1l_100km)+" "  );
+                  lcd.print( String(av_consup)+" "  );  
 
-                  lcd.setCursor(4,0);
-                  //lcd.print( String(fuel_consuption_1l_100km)+"  "  );
-                  lcd.print( String(av_consupl)+"  "  ); 
+                   
 
                   
-                  lcd.setCursor(11,1);
+                  lcd.setCursor(1,1);
                   lcd.print(String(fuel) + "L");
                   
                   
