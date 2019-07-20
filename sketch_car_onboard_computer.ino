@@ -38,13 +38,13 @@ double consup[25];
 double consupl[5];
 double fuel, sum_lpers;
 struct lph {
-  double lperh[125];
+  double lperh[5];
 };
 
 double sum_consup = 0, av_consup = 0, sum_consupl = 0, av_consupl = 0;
 int i,j,k,l,n,m;
 boolean debug = true, inspeed = true, fuelsaved =false;
-byte speed_r[]={10, 20, 30, 40, 60, 70, 90, 110, 130};
+byte throttle, speed_r[]={10, 20, 30, 40, 60, 70, 90, 110, 130};
 
 struct lph lph1;
 
@@ -90,17 +90,19 @@ void setup()
     consup[i]=0;
   }
 
-  for (k=0;k<125;k++) lph1.lperh[k] = 0;
+  for (k=0;k<5;k++) lph1.lperh[k] = 0;
   for (n=0;n<5;n++) consupl[n] =0;
 
   i=0; j=0, k=0, l=0, n=0, m=0;  
-   
+
+  throttle = 0; vss = 0; maf = 0;
   
   lcd.clear();
 
   
   EEPROM.get(0,fuel);
-  EEPROM.get(4,lph1);
+  
+  //EEPROM.get(4,lph1);
 }
 
 void loop()
@@ -119,37 +121,31 @@ void loop()
       if (key >=0){
         
         //pkey = ((key*100)/maxkey);
-       // Serial.println(key); // debug to show keycodes - it help to adjust your own AD keyboard button values
+        //Serial.println(key); // debug to show keycodes - it help to adjust your own AD keyboard button values
         //Serial.println(String(maxkey)+"-----");
 
         
         if (key >=10 && key <= 29 ) {
                   Serial.println("sw 1");                                   
                   // i2c_eeprom_read_byte(0x50, 1));
-
                   // ha a 2-es menü alatt nyomjuk meg, a benzin -1L
                   if (vss == 0) {
                   manageFuel(-1);
                   }
         }
 
-        if (key >=31 && key <= 60) {
-                  
+        if (key >=31 && key <= 60) {                  
                    // sw2
                    Serial.println("sw 2");
                    // i2c_eeprom_write_byte(0x50, 1,19);
-
                    if (vss == 0) {
                    manageFuel(+0.25);
-                   }
-                   
+                   }                   
         }                    
 
         if (key >=65 && key <= 90 ) {
-            // sw3
-           
+            // sw3           
                   Serial.println("sw 3");
-
                   if (vss == 0) {
                   manageFuel(-0.25);
                   }
@@ -161,8 +157,7 @@ void loop()
                   if (vss == 0) {
                   // ha a 2-es menü alatt nyomjuk meg, a benzin +1L
                   manageFuel(+1);
-                  }
-                  
+                  }                  
         }
 
         if (key >= 230 && key <= 250) { // sw5
@@ -170,10 +165,7 @@ void loop()
            if (vss == 0) {
           fuel= -1 ;
           manageFuel(0);
-           }
-
-
-        
+           }        
         }
       }
     }
@@ -183,25 +175,25 @@ void loop()
      * Kiolvasok minden adatot amire szükségem lehet.
      */
     vss = VSS(ReadDataString("010D"));
-
-    if (fuelsaved == false) {
-
-      
+    
+    
+    if (fuelsaved == false) {      
       EEPROM.put(0, fuel);
-      EEPROM.put(4, lph1);
+      //EEPROM.put(4, lph1);
       fuelsaved = true;
-      
+      maf = 0;      
     }
     
     //vss=30;
     if (vss > 0) 
     {
-              inspeed = true; fuelsaved = false;
+              throttle = THROTTLE(ReadDataString("0111"));      
+              inspeed = true; fuelsaved = false;        
               
+        if (throttle > 2) {
               MAF(ReadDataString("0110"));
               //maf=2;
-              fuel_consuption_1l_100km =   ((maf*0.3355)/vss)*100;
-              
+              fuel_consuption_1l_100km =   ((maf*0.3355)/vss)*100;              
               if (isnan(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
               if (isinf(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
               if (fuel_consuption_1l_100km <0) fuel_consuption_1l_100km=0;
@@ -213,19 +205,17 @@ void loop()
               if (k == 5) k=0;
               if (m == 5) m=0;
 
-
               lfuel_in_tank = (tanksize * fuel)/100;
               kmcantravel = (lfuel_in_tank * 100) / av_consup;
-              
-                
-             
+              //Serial.println(fuel);
+                             
               consup[i] = fuel_consuption_1l_100km;
               consupl[m]= fuel_consuption_1l_100km;
               
               lph1.lperh[k] = maf * 0.335; // L/h
-              
-              i++; k++; m++;
-              
+                            
+              i++; k++; m++; // csak akkor lépek tovább ha nyomjuk a gázt
+        
               sum_consup=0;
               for (j=0;j<25;j++) {
                 sum_consup = sum_consup + consup[j];
@@ -236,19 +226,20 @@ void loop()
                 sum_consupl = sum_consupl + consupl[n];
               }
 
-              for (l=0; l<125; l++) {
+              
+              for (l=0; l<5; l++) {
                 sum_lpers = sum_lpers + lph1.lperh[l];
               }
 
-              if (lph1.lperh[124] == 0) {
+              if (lph1.lperh[4] == 0) {
                 sum_lpers = sum_lpers /k; // átlag
-                sum_lpers = sum_lpers / 3600; // adott másodpercben
+                sum_lpers = sum_lpers / 60; // adott másodpercben -vagyis most már perc
                 fuel = fuel - sum_lpers;
               }
               
-              if (lph1.lperh[124] > 0 ) { 
-                sum_lpers = sum_lpers /125; // átlag
-                sum_lpers = sum_lpers / 3600; // adott másodpercben
+              if (lph1.lperh[4] > 0 ) { 
+                sum_lpers = sum_lpers /5; // átlag
+                sum_lpers = sum_lpers / 60; // adott másodpercben -vagyis most már perc
                 fuel = fuel - sum_lpers; 
               }
               
@@ -258,7 +249,6 @@ void loop()
               } else {
                 av_consup = sum_consup/25;  
               }
-
               
               
               if ( consupl[4] == 0 ) {
@@ -267,14 +257,13 @@ void loop()
                 av_consupl = sum_consupl/5;  
               }
               
-              
-              
+        } // throttle
+         
               /*
-               * Innen jönbnek a kiiratások, amikor sebességben vagyunk 
+               * Innen jönnek a kiiratások, amikor sebességben vagyunk 
                * 
                */
-               
-                  
+                                 
                   // lcd.print(inData);
                   // lcd.setCursor(1,0);
                   //Serial.println(maf);
@@ -292,22 +281,15 @@ void loop()
                   lcd.setCursor(11,0);
                   //lcd.print( String(fuel_consuption_1l_100km)+" "  );
                   lcd.print( String(av_consup)+" "  );  
-
-                   
-
                   
-                  lcd.setCursor(1,1);
+                  lcd.setCursor(10,1);
                   lcd.print(String(fuel) + "L");
-                  
                   
                   //lcd.print(String(stored_av)+"   ");
                   
-                  
                   lcd.setCursor(5,1);
-                  lcd.print(String(kmcantravel)+"Km ");
-                   
-               
-              
+                  lcd.print(String(kmcantravel)+"Km");
+                  
     }
 
     if (vss == 0) {
@@ -357,9 +339,7 @@ void manageFuel(double f) {
   if (fuel < 0) fuel = 0;
   EEPROM.put(0,fuel);
   // i2c_eeprom_write_byte(0x50, 1,(byte)fuel);
-  //Serial.println(fuel);
-  
-    
+  //Serial.println(fuel);   
 }
 
 int VSS (String str) {
@@ -369,6 +349,15 @@ int VSS (String str) {
   A = strtol(work.c_str(), NULL, 16);
   return A;
 }
+
+byte THROTTLE(String str) {
+  byte A;
+  String work;  
+  work = str.substring(11,13);
+  A = strtol(work.c_str(), NULL, 16);
+  return ((100/255) * A);
+}
+
 
 // 0110]41 10 01 58 >
 void MAF(String str) {
