@@ -7,6 +7,8 @@
 #include <EEPROM.h>
 
 #define tanksize 42
+#define SECONDS 300 // Ennyi másodpercnyi üzemanyagot vonunk le
+#define THROTTLE_DEFAULT 14
 
 LiquidCrystal_I2C lcd(0x27,16,2); // set the LCD address to 0x27 for a 16 chars and 2 line display
 SoftwareSerial mySerial(10, 11); // RX, TX
@@ -34,15 +36,17 @@ int oldkey=-1;
 int maf, kmcantravel;
 double fuel_consuption_1l_100km,stored_av, fuel_in_tank, lfuel_in_tank;
 int vss;
-double consup[25];
+
 double consupl[5];
 double fuel, sum_lpers;
 struct lph {
   double lperh[5];
+  double consup[25];
+  int i;
 };
 
 double sum_consup = 0, av_consup = 0, sum_consupl = 0, av_consupl = 0;
-int i,j,k,l,n,m;
+int j,k,l,n,m;
 boolean debug = true, inspeed = true, fuelsaved =false;
 byte throttle, speed_r[]={10, 20, 30, 40, 60, 70, 90, 110, 130};
 
@@ -85,15 +89,12 @@ void setup()
   lcd.print(ReadDataString("0100"));
   delay(1000);
   
-
-  for (i=0; i<25; i++) {
-    consup[i]=0;
-  }
-
+  if (lph1.i <0 || lph1.i > 25) lph1.i = 0;
+  
   for (k=0;k<5;k++) lph1.lperh[k] = 0;
   for (n=0;n<5;n++) consupl[n] =0;
 
-  i=0; j=0, k=0, l=0, n=0, m=0;  
+  j=0, k=0, l=0, n=0, m=0;  
 
   throttle = 0; vss = 0; maf = 0;
   
@@ -102,7 +103,7 @@ void setup()
   
   EEPROM.get(0,fuel);
   
-  //EEPROM.get(4,lph1);
+  EEPROM.get(4,lph1);
 }
 
 void loop()
@@ -125,7 +126,7 @@ void loop()
         //Serial.println(String(maxkey)+"-----");
 
         
-        if (key >=10 && key <= 29 ) {
+        if (key >=1 && key <= 10 ) {
                   Serial.println("sw 1");                                   
                   // i2c_eeprom_read_byte(0x50, 1));
                   // ha a 2-es menü alatt nyomjuk meg, a benzin -1L
@@ -134,7 +135,7 @@ void loop()
                   }
         }
 
-        if (key >=31 && key <= 60) {                  
+        if (key >=20 && key <= 35) {                  
                    // sw2
                    Serial.println("sw 2");
                    // i2c_eeprom_write_byte(0x50, 1,19);
@@ -143,7 +144,7 @@ void loop()
                    }                   
         }                    
 
-        if (key >=65 && key <= 90 ) {
+        if (key >=55 && key <= 75 ) {
             // sw3           
                   Serial.println("sw 3");
                   if (vss == 0) {
@@ -155,16 +156,35 @@ void loop()
            //sw4
                   Serial.println("sw 4");
                   if (vss == 0) {
-                  // ha a 2-es menü alatt nyomjuk meg, a benzin +1L
-                  manageFuel(+1);
+
+                
+                    
+                    // ha a 2-es menü alatt nyomjuk meg, a benzin +1L
+                    manageFuel(+1);
                   }                  
         }
 
         if (key >= 230 && key <= 250) { // sw5
-           // sw5 
+                  // sw5
            if (vss == 0) {
-          fuel= -1 ;
-          manageFuel(0);
+                  switch ((int)fuel) {
+                     case 1:
+                       /*
+                        * if not moving and fuel set to 1L and push the button 5,
+                        * it will reset the long term consuption array.
+                        * this is for testing purpose.
+                        */
+                       null_consup();
+                     break;
+                      
+                      
+                     default:
+                      fuel= -1 ;
+                      manageFuel(0);
+                     break;
+                  }
+            
+                  
            }        
         }
       }
@@ -175,55 +195,83 @@ void loop()
      * Kiolvasok minden adatot amire szükségem lehet.
      */
     vss = VSS(ReadDataString("010D"));
-    
-    
+
+    // if fuel not saved we save it. And save some consuption data too
     if (fuelsaved == false) {      
       EEPROM.put(0, fuel);
-      //EEPROM.put(4, lph1);
+      EEPROM.put(4, lph1);
       fuelsaved = true;
       maf = 0;      
     }
-    
+
+    // if we are not is moving show the fuel settings
+    if (vss == 0) {
+      if (inspeed == true) {
+        lcd.clear();
+        inspeed = false;
+      }
+      lcd.setCursor(0,0);
+      lcd.print("Fuel: ");
+      lcd.setCursor(6,0);
+      lcd.print(String(fuel)+"L  ");
+    }
     //vss=30;
-    if (vss > 0) 
+
+    // if we are moving start calculation the consuption
+    
+    if (vss > 5) 
     {
-              throttle = THROTTLE(ReadDataString("0111"));      
-              inspeed = true; fuelsaved = false;        
+      inspeed = true; fuelsaved = false;
+      
+      throttle = THROTTLE(ReadDataString("0111"));
+      if (throttle > THROTTLE_DEFAULT + 1){
+              //throttle = THROTTLE(ReadDataString("0111"));      
+                      
               
-        if (throttle > 2) {
+        
               MAF(ReadDataString("0110"));
               //maf=2;
               fuel_consuption_1l_100km =   ((maf*0.3355)/vss)*100;              
               if (isnan(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
               if (isinf(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
               if (fuel_consuption_1l_100km <0) fuel_consuption_1l_100km=0;
-              if ( i==25 ) {
-                i=0;
+              
+              if ( lph1.i==25 ) {
+                lph1.i=0;
                 //storeAverage(av_consup);
               }
 
               if (k == 5) k=0;
-              if (m == 5) m=0;
+              if (m == 5) { // ha a rövid átlag kiszámolva, eltárolom a hosszúban
+                
+                m=0;
+                lph1.consup[lph1.i] = sum_consupl;
+                lph1.i++;   
+              }
 
               lfuel_in_tank = (tanksize * fuel)/100;
               kmcantravel = (lfuel_in_tank * 100) / av_consup;
               //Serial.println(fuel);
                              
-              consup[i] = fuel_consuption_1l_100km;
+              
               consupl[m]= fuel_consuption_1l_100km;
               
               lph1.lperh[k] = maf * 0.335; // L/h
-                            
-              i++; k++; m++; // csak akkor lépek tovább ha nyomjuk a gázt
-        
+
+          //  lph1.i: hoszabb átlag fogyasztás
+          //  k: rövid átlag L/h
+          //  m: rövid átlag fogyasztás
+          
+              k++; m++; // csak akkor lépek tovább ha nyomjuk a gázt
+              Serial.println( av_consup );
               sum_consup=0;
               for (j=0;j<25;j++) {
-                sum_consup = sum_consup + consup[j];
+                sum_consup = sum_consup + lph1.consup[j];
               }
 
               sum_consupl=0;
               for (n=0;n<5;n++) {
-                sum_consupl = sum_consupl + consupl[n];
+                sum_consupl = sum_consupl + consupl[n]; 
               }
 
               
@@ -233,19 +281,19 @@ void loop()
 
               if (lph1.lperh[4] == 0) {
                 sum_lpers = sum_lpers /k; // átlag
-                sum_lpers = sum_lpers / 60; // adott másodpercben -vagyis most már perc
-                fuel = fuel - sum_lpers;
+                sum_lpers = sum_lpers / 3600; // adott másodpercben 
+                fuel = fuel - (sum_lpers * SECONDS);
               }
               
               if (lph1.lperh[4] > 0 ) { 
                 sum_lpers = sum_lpers /5; // átlag
-                sum_lpers = sum_lpers / 60; // adott másodpercben -vagyis most már perc
-                fuel = fuel - sum_lpers; 
+                sum_lpers = sum_lpers / 3600; // adott másodpercben 
+                fuel = fuel - (sum_lpers * SECONDS); 
               }
               
               //Serial.println(sum_consup);
-              if ( consup[24] == 0 ) {
-                av_consup = sum_consup/i;
+              if ( lph1.consup[24] == 0 ) {
+                av_consup = sum_consup/ lph1.i;
               } else {
                 av_consup = sum_consup/25;  
               }
@@ -257,7 +305,7 @@ void loop()
                 av_consupl = sum_consupl/5;  
               }
               
-        } // throttle
+        
          
               /*
                * Innen jönnek a kiiratások, amikor sebességben vagyunk 
@@ -289,21 +337,8 @@ void loop()
                   
                   lcd.setCursor(5,1);
                   lcd.print(String(kmcantravel)+"Km");
-                  
     }
-
-    if (vss == 0) {
-      if (inspeed == true) {
-        lcd.clear();
-        inspeed = false;
-      }
-      
-      lcd.setCursor(0,0);
-      lcd.print("Fuel: ");
-      lcd.setCursor(6,0);
-      lcd.print(String(fuel)+"L  ");
-    }
-    
+   }
   }
  // delay(100);
 }
@@ -351,11 +386,13 @@ int VSS (String str) {
 }
 
 byte THROTTLE(String str) {
-  byte A;
+  byte A, ret;
   String work;  
   work = str.substring(11,13);
   A = strtol(work.c_str(), NULL, 16);
-  return ((100/255) * A);
+  ret = A / 2.55;
+  //Serial.print(ret);
+  return (ret);
 }
 
 
@@ -457,4 +494,15 @@ double Decode(int value) {
   int av = ((av1 & 0xFF) << 8) | (av2 & 0xFF);
   stored_av = Decode(av);
   
+ }
+
+ void null_consup() {
+  byte ti;
+  lcd.noBacklight();
+  delay(200);
+  lcd.backlight();
+  
+  for (ti=0; ti<25; ti++) {
+    lph1.consup[ti]=0;
+  }
  }
