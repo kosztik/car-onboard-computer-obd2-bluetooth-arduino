@@ -7,7 +7,7 @@
 #include <EEPROM.h>
 
 #define tanksize 42
-#define SECONDS 300 // Ennyi másodpercnyi üzemanyagot vonunk le
+#define SECONDS 3 // Ennyi másodpercnyi üzemanyagot vonunk le
 #define THROTTLE_DEFAULT 14
 
 LiquidCrystal_I2C lcd(0x27,16,2); // set the LCD address to 0x27 for a 16 chars and 2 line display
@@ -104,6 +104,10 @@ void setup()
   EEPROM.get(0,fuel);
   
   EEPROM.get(4,lph1);
+  //byte qq;
+  //for (qq=0; qq<25; qq++) {
+  //  Serial.println(lph1.consup[qq]);
+  //}
 }
 
 void loop()
@@ -115,7 +119,7 @@ void loop()
     //delay(50);  // wait for debounce time
     adc_key_in = analogRead(0);    // read the value from the sensor
     key = adc_key_in;   
-    Serial.println(adc_key_in);
+    //Serial.println(adc_key_in);
     if (key != oldkey)
     {
       oldkey = key;
@@ -202,6 +206,7 @@ void loop()
       EEPROM.put(4, lph1);
       fuelsaved = true;
       maf = 0;      
+      //Serial.println(lph1.i);
     }
 
     // if we are not is moving show the fuel settings
@@ -224,7 +229,7 @@ void loop()
       inspeed = true; fuelsaved = false;
       
       throttle = THROTTLE(ReadDataString("0111"));
-      if (throttle > THROTTLE_DEFAULT + 1){
+      if (throttle > THROTTLE_DEFAULT ){
               //throttle = THROTTLE(ReadDataString("0111"));      
                       
               
@@ -245,7 +250,7 @@ void loop()
               if (m == 5) { // ha a rövid átlag kiszámolva, eltárolom a hosszúban
                 
                 m=0;
-                lph1.consup[lph1.i] = sum_consupl;
+                lph1.consup[lph1.i] = av_consupl;
                 lph1.i++;   
               }
 
@@ -263,7 +268,7 @@ void loop()
           //  m: rövid átlag fogyasztás
           
               k++; m++; // csak akkor lépek tovább ha nyomjuk a gázt
-              Serial.println( av_consup );
+              //Serial.println( av_consup );
               sum_consup=0;
               for (j=0;j<25;j++) {
                 sum_consup = sum_consup + lph1.consup[j];
@@ -501,7 +506,7 @@ double Decode(int value) {
   lcd.noBacklight();
   delay(200);
   lcd.backlight();
-  
+  lph1.i = 0;
   for (ti=0; ti<25; ti++) {
     lph1.consup[ti]=0;
   }
