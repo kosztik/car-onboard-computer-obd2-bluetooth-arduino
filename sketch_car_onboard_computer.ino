@@ -7,7 +7,7 @@
 #include <EEPROM.h>
 
 #define tanksize 42
-#define SECONDS 3 // Ennyi másodpercnyi üzemanyagot vonunk le
+#define SECONDS 2 // Ennyi másodpercnyi üzemanyagot vonunk le
 #define THROTTLE_DEFAULT 14
 
 LiquidCrystal_I2C lcd(0x27,16,2); // set the LCD address to 0x27 for a 16 chars and 2 line display
@@ -26,6 +26,9 @@ SoftwareSerial mySerial(10, 11); // RX, TX
 // Word to byte
 // byte highByte(int x)
 // byte lowByte(int x)
+
+int piezoPin = 8;
+
 
 //                    sw1 sw2 sw3 sw4  sw5
 //int adc_key_val[5] ={0, 19-20, 57, 109, 232-233 };
@@ -48,7 +51,8 @@ struct lph {
 double sum_consup = 0, av_consup = 0, sum_consupl = 0, av_consupl = 0;
 int j,k,l,n,m;
 boolean debug = true, inspeed = true, fuelsaved =false;
-byte throttle, speed_r[]={10, 20, 30, 40, 60, 70, 90, 110, 130};
+byte q, throttle, speed_r[]={10, 20, 30, 40, 60, 70, 90, 110, 130};
+byte speed50[2];
 
 struct lph lph1;
 
@@ -82,7 +86,15 @@ void setup()
   delay(1000);
   
   lcd.setCursor(0,1);
-  lcd.print(ReadDataString("ATI"));
+  
+  String stringATI = ReadDataString("ATI");
+  if (stringATI.substring(0) == "ELM") {
+    tone_started();
+  } else {
+    tone_error();  
+  }
+  
+  
   delay(1000);
   
   lcd.setCursor(0,1);
@@ -94,12 +106,12 @@ void setup()
   for (k=0;k<5;k++) lph1.lperh[k] = 0;
   for (n=0;n<5;n++) consupl[n] =0;
 
-  j=0, k=0, l=0, n=0, m=0;  
+  j=0, k=0, l=0, n=0, m=0, q=0;  
 
   throttle = 0; vss = 0; maf = 0;
   
   lcd.clear();
-
+  speed50[0] = 0; speed50[1] = 0;
   
   EEPROM.get(0,fuel);
   
@@ -108,6 +120,7 @@ void setup()
   //for (qq=0; qq<25; qq++) {
   //  Serial.println(lph1.consup[qq]);
   //}
+  
 }
 
 void loop()
@@ -219,6 +232,7 @@ void loop()
       lcd.print("Fuel: ");
       lcd.setCursor(6,0);
       lcd.print(String(fuel)+"L  ");
+      lcd.setCursor(10,1);
     }
     //vss=30;
 
@@ -227,12 +241,14 @@ void loop()
     if (vss > 5) 
     {
       inspeed = true; fuelsaved = false;
+
+      if ( q > 1 ) q = 0;
+      speed50[q] = vss;
+      if ( speed50[0] <= 55 && speed50[1] > 55) tone_beep();
       
       throttle = THROTTLE(ReadDataString("0111"));
-      if (throttle > THROTTLE_DEFAULT ){
+      
               //throttle = THROTTLE(ReadDataString("0111"));      
-                      
-              
         
               MAF(ReadDataString("0110"));
               //maf=2;
@@ -241,13 +257,13 @@ void loop()
               if (isinf(fuel_consuption_1l_100km)) fuel_consuption_1l_100km=0;
               if (fuel_consuption_1l_100km <0) fuel_consuption_1l_100km=0;
               
-              if ( lph1.i==25 ) {
+              if ( lph1.i==25 ) {// a hosszú átlag nullázása
                 lph1.i=0;
                 //storeAverage(av_consup);
               }
 
-              if (k == 5) k=0;
-              if (m == 5) { // ha a rövid átlag kiszámolva, eltárolom a hosszúban
+              if (k == 5) k=0;  // a rövid átlag nullázása
+              if (m == 5) {     // ha a rövid átlag kiszámolva, eltárolom a hosszúban
                 
                 m=0;
                 lph1.consup[lph1.i] = av_consupl;
@@ -256,20 +272,18 @@ void loop()
 
               lfuel_in_tank = (tanksize * fuel)/100;
               kmcantravel = (lfuel_in_tank * 100) / av_consup;
-              //Serial.println(fuel);
-                             
-              
               consupl[m]= fuel_consuption_1l_100km;
-              
               lph1.lperh[k] = maf * 0.335; // L/h
 
-          //  lph1.i: hoszabb átlag fogyasztás
-          //  k: rövid átlag L/h
-          //  m: rövid átlag fogyasztás
-          
-              k++; m++; // csak akkor lépek tovább ha nyomjuk a gázt
-              //Serial.println( av_consup );
-              sum_consup=0;
+              //  lph1.i: hoszabb átlag fogyasztás
+              //  k: rövid átlag L/h
+              //  m: rövid átlag fogyasztás
+              
+              if (throttle > THROTTLE_DEFAULT + 1 ) {    
+                  k++; m++; q++; // csak akkor lépek tovább ha nyomjuk a gázt
+              }
+                       
+              sum_consup = 0;
               for (j=0;j<25;j++) {
                 sum_consup = sum_consup + lph1.consup[j];
               }
@@ -342,7 +356,7 @@ void loop()
                   
                   lcd.setCursor(5,1);
                   lcd.print(String(kmcantravel)+"Km");
-    }
+    
    }
   }
  // delay(100);
@@ -510,4 +524,21 @@ double Decode(int value) {
   for (ti=0; ti<25; ti++) {
     lph1.consup[ti]=0;
   }
+ }
+
+ void tone_started() {
+  tone(piezoPin, 1000, 500); delay(600);
+  tone(piezoPin, 500, 100); delay(150);
+  tone(piezoPin, 1000, 500); 
+ }
+
+ void tone_error() {
+  tone(piezoPin, 500, 800); delay(1000);
+  tone(piezoPin, 500, 100); delay(200);
+  tone(piezoPin, 500, 100); delay(200);
+  tone(piezoPin, 500, 800); delay(1000);
+ }
+
+ void tone_beep() {
+  tone(piezoPin, 1000, 500);
  }
